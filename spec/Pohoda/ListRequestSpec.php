@@ -105,6 +105,18 @@ class ListRequestSpec extends ObjectBehavior
         $this->addUserFilterName('CustomFilter')->getXML()->asXML()->shouldReturn('<lst:listInvoiceRequest version="2.0" invoiceVersion="2.0" invoiceType="issuedInvoice"><lst:requestInvoice><ftr:userFilterName>CustomFilter</ftr:userFilterName></lst:requestInvoice></lst:listInvoiceRequest>');
     }
 
+    public function it_creates_correct_xml_for_invoice_with_query_filter()
+    {
+        $this->beConstructedWith([
+            'type' => 'Invoice'
+        ], '123');
+
+        $this->addQueryFilter([
+            'filter' => '(FA.DatSave>=CONVERT(DATETIME, \'01/31/2025 16:30:00\', 101) OR FA.DatLikv>=CONVERT(DATETIME, \'01/31/2025\', 101))',
+            'textName' => '(Uloženo >= 2025-01-31 16:30:00; Likv. >= 2025-01-31)',
+        ])->getXML()->asXML()->shouldReturn('<lst:listInvoiceRequest version="2.0" invoiceVersion="2.0" invoiceType="issuedInvoice"><lst:requestInvoice><ftr:queryFilter><ftr:filter>(FA.DatSave&gt;=CONVERT(DATETIME, \'01/31/2025 16:30:00\', 101) OR FA.DatLikv&gt;=CONVERT(DATETIME, \'01/31/2025\', 101))</ftr:filter><ftr:textName>(Uloženo &gt;= 2025-01-31 16:30:00; Likv. &gt;= 2025-01-31)</ftr:textName></ftr:queryFilter></lst:requestInvoice></lst:listInvoiceRequest>');
+    }
+
     public function it_creates_correct_xml_for_stock_with_complex_filter()
     {
         $this->beConstructedWith([
@@ -112,5 +124,63 @@ class ListRequestSpec extends ObjectBehavior
         ], '123');
 
         $this->addFilter(['storage' => ['ids' => 'MAIN'], 'lastChanges' => '2018-04-29 14:30'])->getXML()->asXML()->shouldReturn('<lStk:listStockRequest version="2.0" stockVersion="2.0"><lStk:requestStock><ftr:filter><ftr:storage><typ:ids>MAIN</typ:ids></ftr:storage><ftr:lastChanges>2018-04-29T14:30:00</ftr:lastChanges></ftr:filter></lStk:requestStock></lStk:listStockRequest>');
+    }
+
+    public function it_creates_proper_restriction_data()
+    {
+        $this->beConstructedWith(
+            ['type' => 'Invoice'],
+            '123'
+        );
+
+        $this->addRestrictionData(['liquidation' => true]);
+
+        $this->getXml()->asXML()->shouldReturn('<lst:listInvoiceRequest version="2.0" invoiceVersion="2.0" invoiceType="issuedInvoice"><lst:requestInvoice/><lst:restrictionData><lst:liquidation>true</lst:liquidation></lst:restrictionData></lst:listInvoiceRequest>');
+    }
+
+    public function it_creates_proper_stock_restriction_data()
+    {
+        $this->beConstructedWith(
+            ['type' => 'Stock'],
+            '123'
+        );
+
+        $this->addRestrictionData([
+            'relatedFiles' => true,
+            'stockAttach' => false,
+            'attachments' => false,
+            'alternativeStocks' => false,
+            'stockItem' => false,
+            'stockSerialNumber' => false
+        ]);
+
+        $this->getXml()->asXML()->shouldReturn('<lStk:listStockRequest version="2.0" stockVersion="2.0"><lStk:requestStock/><lStk:restrictionData><lStk:attachments>false</lStk:attachments><lStk:stockItem>false</lStk:stockItem><lStk:stockAttach>false</lStk:stockAttach><lStk:stockSerialNumber>false</lStk:stockSerialNumber><lStk:relatedFiles>true</lStk:relatedFiles><lStk:alternativeStocks>false</lStk:alternativeStocks></lStk:restrictionData></lStk:listStockRequest>');
+    }
+
+    public function it_creates_proper_limit()
+    {
+        $this->beConstructedWith(
+            ['type' => 'Invoice'],
+            '123'
+        );
+
+        $this->addLimit(['count' => 10]);
+
+        $this->getXml()->asXML()->shouldReturn('<lst:listInvoiceRequest version="2.0" invoiceVersion="2.0" invoiceType="issuedInvoice"><lst:limit><ftr:count>10</ftr:count></lst:limit><lst:requestInvoice/></lst:listInvoiceRequest>');
+    }
+
+    public function it_creates_proper_stock_limit()
+    {
+        $this->beConstructedWith(
+            ['type' => 'Stock'],
+            '123'
+        );
+
+        $this->addLimit([
+            'count' => 10,
+            'idFrom' => 50
+        ]);
+
+        $this->getXml()->asXML()->shouldReturn('<lStk:listStockRequest version="2.0" stockVersion="2.0"><lStk:limit><ftr:idFrom>50</ftr:idFrom><ftr:count>10</ftr:count></lStk:limit><lStk:requestStock/></lStk:listStockRequest>');
     }
 }
